@@ -32,10 +32,44 @@ async function pickProvider(): Promise<string> {
   return cachedAutoPickedProvider;
 }
 
+async function inferViaConfiguredProxy(messages: { role: string; content: string }[]): Promise<string> {
+  const base = config.zgComputeProxyBaseUrl.replace(/\/$/, "");
+  const key = config.zgComputeProxyApiKey;
+  const url = `${base}/chat/completions`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model: config.zgComputeProxyModel,
+      messages,
+      temperature: 0.7,
+      max_tokens: 1024,
+    }),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`0G compute proxy HTTP ${res.status}: ${t}`);
+  }
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error("0G compute proxy: empty completion");
+  return content;
+}
+
 /**
- * Chat completion via 0G Compute (OpenAI-compatible proxy). No local model execution.
+ * Chat completion via 0G Compute.
+ * If `ZG_COMPUTE_PROXY_URL` + `ZG_COMPUTE_PROXY_API_KEY` are set, uses that OpenAI-compatible endpoint
+ * (same as OpenAI SDK `baseURL` + `apiKey`). Otherwise uses the 0G serving broker + provider metadata.
  */
 export async function infer0GChat(messages: { role: string; content: string }[]): Promise<string> {
+  if (config.zgComputeProxyBaseUrl && config.zgComputeProxyApiKey) {
+    return inferViaConfiguredProxy(messages);
+  }
   const b = await getBroker();
   const providerAddr = await pickProvider();
   try {
@@ -66,4 +100,9 @@ export async function infer0GChat(messages: { role: string; content: string }[])
   const content = data.choices?.[0]?.message?.content;
   if (!content) throw new Error("0G Compute: empty completion");
   return content;
+}
+
+/** True when inference uses the configured OpenAI-compatible proxy instead of the broker. */
+export function is0GComputeProxyActive(): boolean {
+  return Boolean(config.zgComputeProxyBaseUrl && config.zgComputeProxyApiKey);
 }

@@ -1,21 +1,64 @@
 import type { AgentRecord } from "./types.js";
 import { downloadFrom0G, uploadJsonTo0G } from "./storage0g.js";
-import { infer0GChat } from "./compute0g.js";
+import { generateResponseWithFallback } from "./compute/providers.js";
+import { isOpenClawEnabled } from "./openclaw/config.js";
+import type { OpenClawConfig } from "./openclaw/types.js";
+import type { RunAgentResult } from "./openclaw/types.js";
+
+export type AgentConfigEnvelope = {
+  agentId?: string;
+  ensFullName: string;
+  tokenId?: number;
+  owner?: string;
+  version?: number;
+};
 
 export type AgentConfig = {
   name: string;
   expertise: string;
   personality: string;
+  profession?: string;
+  specialization?: string;
+  experience?: string;
+  advisorTone?: string;
+  systemPrompt?: string;
+  pricing?: AgentRecord["pricing"];
+  personalitySliders?: AgentRecord["personalitySliders"];
+  configVersion?: number;
+  version?: number;
+  openClaw?: OpenClawConfig;
+  _counselr?: AgentConfigEnvelope;
+  /** Legacy 0G config envelopes (readers prefer `_counselr`, then `_alter`, then `_twinnet`). */
+  _alter?: AgentConfigEnvelope;
+  _twinnet?: AgentConfigEnvelope;
 };
+
+function personalityToString(p: unknown, fallback: string): string {
+  if (typeof p === "string") return p;
+  if (p && typeof p === "object") {
+    const o = p as Record<string, unknown>;
+    if (typeof o.summary === "string") return o.summary;
+    return JSON.stringify(p);
+  }
+  return fallback;
+}
 
 export async function loadAgentConfig(agent: AgentRecord): Promise<AgentConfig> {
   const raw = await downloadFrom0G(agent.configRoot);
-  return JSON.parse(raw) as AgentConfig;
+  const cfg = JSON.parse(raw) as AgentConfig;
+  const personality = personalityToString(cfg.personality, agent.personality || "");
+  return { ...cfg, personality };
 }
 
-/** Naive RAG: pull text from latest memory / conversation roots (most recent first). */
+/** Naive RAG: memory roots + optional long-term summaries. */
 export async function buildRagContext(agent: AgentRecord, maxChars = 6000): Promise<string> {
-  const roots = [...agent.memoryRoots, ...agent.conversationRoots].slice(-12).reverse();
+  const roots = [
+    ...(agent.longTermRoots ?? []),
+    ...agent.memoryRoots,
+    ...agent.conversationRoots,
+  ]
+    .slice(-16)
+    .reverse();
   const chunks: string[] = [];
   let n = 0;
   for (const r of roots) {
@@ -25,10 +68,50 @@ export async function buildRagContext(agent: AgentRecord, maxChars = 6000): Prom
       chunks.push(t.slice(0, 2000));
       n += t.length;
     } catch {
-      /* skip missing */
+      /* skip */
     }
   }
   return chunks.join("\n---\n").slice(0, maxChars);
+}
+
+function sliderHints(cfg: AgentConfig): string {
+  const s = cfg.personalitySliders;
+  if (!s) return "";
+  return `\nVoice controls (humor ${s.humor}, tone ${s.tone}, intelligence ${s.intelligence} on 0–100) — lean into these.`;
+}
+
+export async function runAgentTurnDetailed(
+  target: AgentRecord,
+  userMessage: string,
+  caller?: AgentRecord | null
+): Promise<{ reply: string; provider: string }> {
+  const cfg = await loadAgentConfig(target);
+  const rag = await buildRagContext(target);
+  const callerBlock = caller
+    ? `You are replying to another agent: ${caller.name} (${caller.expertise}).`
+    : "You are replying to a human operator.";
+  const ragBlock = `Relevant memory and prior exchanges (retrieved from decentralized storage):
+${rag || "(none yet)"}
+
+Stay in character. Be concise and actionable.`;
+  const system = cfg.systemPrompt?.trim()
+    ? `${cfg.systemPrompt.trim()}
+
+${callerBlock}
+
+${ragBlock}`
+    : `You are a digital twin agent named "${cfg.name}".
+Expertise: ${cfg.expertise}
+Personality: ${cfg.personality}${sliderHints(cfg)}
+${callerBlock}
+
+${ragBlock}`;
+  const messages = [
+    { role: "system", content: system },
+    { role: "user", content: userMessage },
+  ];
+  const { text, provider } = await generateResponseWithFallback(messages);
+  return { reply: text, provider };
 }
 
 export async function runAgentTurn(
@@ -36,28 +119,32 @@ export async function runAgentTurn(
   userMessage: string,
   caller?: AgentRecord | null
 ): Promise<string> {
-  const cfg = await loadAgentConfig(target);
-  const rag = await buildRagContext(target);
-  const callerBlock = caller
-    ? `You are replying to another agent: ${caller.name} (${caller.expertise}).`
-    : "You are replying to a human operator.";
-  const system = `You are a digital twin agent named "${cfg.name}".
-Expertise: ${cfg.expertise}
-Personality: ${cfg.personality}
-${callerBlock}
-
-Relevant memory and prior exchanges (retrieved from decentralized storage):
-${rag || "(none yet)"}
-
-Stay in character. Be concise and actionable.`;
-  const messages = [
-    { role: "system", content: system },
-    { role: "user", content: userMessage },
-  ];
-  return infer0GChat(messages);
+  const { reply } = await runAgentTurnDetailed(target, userMessage, caller);
+  return reply;
 }
 
 export async function persistMemorySnippet(agent: AgentRecord, snippet: object) {
   const root = await uploadJsonTo0G(snippet);
   return root;
+}
+
+export type UnifiedTurnResult =
+  | ({ mode: "openclaw" } & RunAgentResult)
+  | { mode: "legacy"; reply: string; provider: string };
+
+/** OpenClaw when enabled in config; otherwise legacy single-shot completion (still may use 0G per compute chain). */
+export async function runUnifiedAgentTurn(
+  target: AgentRecord,
+  userMessage: string,
+  caller: AgentRecord | null,
+  opts?: { delegatePeer?: AgentRecord }
+): Promise<UnifiedTurnResult> {
+  const cfg = await loadAgentConfig(target);
+  if (isOpenClawEnabled(cfg)) {
+    const { runOpenClawTurn } = await import("./openclaw/agent.js");
+    const r = await runOpenClawTurn(target, userMessage, caller, opts);
+    return { mode: "openclaw", ...r };
+  }
+  const r = await runAgentTurnDetailed(target, userMessage, caller);
+  return { mode: "legacy", reply: r.reply, provider: r.provider };
 }

@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-/* Monorepo: `.env` usually lives at repo root; `npm run dev -w @twinnet/api` cwd is `apps/api`,
+/* Monorepo: `.env` usually lives at repo root; `npm run dev -w @counselr/api` cwd is `apps/api`,
    so default `dotenv/config` never saw root `.env`. Load both; `apps/api/.env` overrides. */
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
@@ -42,19 +42,64 @@ export const config = {
 
   zgInferenceProvider: opt("ZG_INFERENCE_PROVIDER", ""),
 
+  /**
+   * Optional OpenAI-compatible HTTP proxy for 0G-backed inference (e.g. Integrate Network).
+   * When both URL and API key are set, `infer0GChat` uses POST {url}/chat/completions with Bearer auth
+   * instead of the 0G serving broker. Same request shape as the official OpenAI SDK.
+   */
+  zgComputeProxyBaseUrl: opt("ZG_COMPUTE_PROXY_URL", "").trim(),
+  zgComputeProxyApiKey: opt("ZG_COMPUTE_PROXY_API_KEY", "").trim(),
+  zgComputeProxyModel:
+    opt("ZG_COMPUTE_PROXY_MODEL", "qwen/qwen-2.5-7b-instruct").trim() || "qwen/qwen-2.5-7b-instruct",
+
   sepoliaRpc: opt("SEPOLIA_RPC_URL", "https://ethereum-sepolia-rpc.publicnode.com"),
   ensOperatorPrivateKey: opt("ENS_OPERATOR_PRIVATE_KEY", ""),
 
   inftAddress: opt("INFT_CONTRACT_ADDRESS", ""),
   inftOwnerPrivateKey: opt("INFT_OWNER_PRIVATE_KEY", ""),
 
+  /** `{root}` / `{metadataRoot}` replaced with 0x-prefixed root. Default: counselr-0g-metadata:0x… (no Counselr API). */
+  nftTokenUriTemplate: opt("NFT_TOKEN_URI_TEMPLATE", ""),
+
+  /** If true, POST /agents also writes into registry.json so GET /agents / marketplace lists new mints immediately. */
+  persistAgentsLocally: opt("PERSIST_AGENTS_LOCALLY", "true") === "true",
+
   wldRpId: opt("WLD_RP_ID", ""),
   wldAppId: opt("WLD_APP_ID", ""),
   wldSigningKeyHex: opt("WLD_SIGNING_KEY_HEX", ""),
-  wldAction: opt("WLD_ACTION", "twinnet-verify"),
+  wldAction: opt("WLD_ACTION", "counselr-verify"),
   wldEnvironment: (opt("WLD_ENVIRONMENT", "production") as "production" | "staging") || "production",
 
   dataDir: opt("DATA_DIR", "./data"),
+
+  /** local | ens | hybrid — hybrid merges 0G manifest + file registry (default local). */
+  discoveryMode: (opt("DISCOVERY_MODE", "local") as "local" | "ens" | "hybrid") || "local",
+  /** 0G Storage root hash of agent index JSON (see manifest0g.ts). Optional; enables decentralized listing. */
+  agentIndexRoot: opt("AGENT_INDEX_ROOT", ""),
+  /** Sepolia ENS name whose resolver stores twinn.manifest = latest AGENT_INDEX_ROOT (operator updates on mint). */
+  ensIndexName: opt("ENS_INDEX_NAME", ""),
+
+  /** Comma-ordered inference providers: 0g,mock,openai */
+  computeProviders: opt("COMPUTE_PROVIDERS", "0g")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+  computeMockResponse: opt(
+    "COMPUTE_MOCK_RESPONSE",
+    "[mock] Configure COMPUTE_PROVIDERS=0g for real inference. Acknowledged: "
+  ),
+  openaiApiKey: opt("OPENAI_API_KEY", ""),
+  openaiModel: opt("OPENAI_MODEL", "gpt-4o-mini"),
+  openaiBaseUrl: opt("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+
+  /** off | mock — mock accepts free calls; extend for on-chain later */
+  paymentMode: (opt("PAYMENT_MODE", "off") as "off" | "mock") || "off",
+
+  /** Run config reflection every N successful user turns (0 disables) */
+  reflectionEveryN: Number(process.env.REFLECTION_EVERY_N ?? "0"),
+
+  /** If true, legacy inference uses only 0G Compute (no mock/OpenAI fallback). OpenClaw already uses 0G only. */
+  strict0gMode: opt("STRICT_0G_MODE", "false") === "true",
 };
 
 export function assertProduction0G() {

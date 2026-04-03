@@ -67,6 +67,12 @@ export function insertAgent(agent: AgentRecord) {
   persist();
 }
 
+/** First mutation (e.g. inference) may persist a non-authoritative cache row when creation skipped the registry. */
+export function ensureAgentCacheForMutation(agent: AgentRecord): void {
+  if (getAgentById(agent.id)) return;
+  insertAgent(agent);
+}
+
 export function updateAgent(id: string, patch: Partial<AgentRecord>) {
   const db = getDb();
   const i = db.agents.findIndex((a) => a.id === id);
@@ -83,4 +89,14 @@ export function updateAgent(id: string, patch: Partial<AgentRecord>) {
 
 export function newAgentId() {
   return randomUUID();
+}
+
+/** Remove every agent row and ENS map entries; keeps World ID → wallet bindings. */
+export function clearAllAgents() {
+  const db = getDb();
+  db.agents = [];
+  for (const k of Object.keys(db.ensToAgentId)) {
+    delete db.ensToAgentId[k];
+  }
+  persist();
 }

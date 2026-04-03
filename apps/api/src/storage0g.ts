@@ -40,7 +40,7 @@ export async function uploadJsonTo0G(payload: object | string): Promise<string> 
 /** Download by root hash; returns UTF-8 string. */
 export async function downloadFrom0G(rootHash: string): Promise<string> {
   const ind = getIndexer();
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "twinnet-0g-"));
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "counselr-0g-"));
   const out = path.join(dir, "blob");
   const dlErr = await ind.download(rootHash, out, true);
   if (dlErr) throw new Error(`0G download: ${dlErr}`);
