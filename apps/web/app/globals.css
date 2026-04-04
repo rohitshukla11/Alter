@@ -2,8 +2,46 @@
 @config "../tailwind.config.ts";
 
 :root {
+  /* Warm black scale */
+  --bg-0: #080807;
+  --bg-1: #0f0f0d;
+  --bg-2: #171715;
+  --bg-3: #1f1f1c;
+  --bg-4: #272724;
+
+  --border-0: rgba(255, 255, 255, 0.04);
+  --border-1: rgba(255, 255, 255, 0.07);
+  --border-2: rgba(255, 255, 255, 0.12);
+  --border-3: rgba(255, 255, 255, 0.2);
+
+  --text-0: #f0ede8;
+  --text-1: #a09d98;
+  --text-2: #5a5855;
+  --text-3: #363432;
+
   --accent: #e8ff5a;
-  --accent-hover: #f0ff70;
+  --accent-dim: rgba(232, 255, 90, 0.08);
+  --accent-mid: rgba(232, 255, 90, 0.15);
+
+  --success: #4ade80;
+  --success-dim: rgba(74, 222, 128, 0.08);
+  --error: #f87171;
+  --error-dim: rgba(248, 113, 113, 0.08);
+  --pending: #fbd34d;
+  --pending-dim: rgba(251, 211, 77, 0.08);
+
+  --sidebar-w: 224px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --type-2xs: 10px;
+  --type-xs: 11px;
+  --type-sm: 13px;
+  --type-md: 15px;
+  --type-lg: 22px;
+  --type-xl: 36px;
+  --type-2xl: 52px;
 }
 
 html {
@@ -12,6 +50,8 @@ html {
 
 body {
   min-height: 100vh;
+  background: var(--bg-0);
+  color: var(--text-0);
 }
 
 @keyframes iris-ring-spin {
@@ -125,6 +165,32 @@ body {
   animation: spin-smooth 700ms linear infinite;
 }
 
+.font-display {
+  font-family: var(--font-syne), ui-sans-serif;
+}
+
+.type-2xs {
+  font-size: var(--type-2xs);
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+}
+
+.type-xs {
+  font-size: var(--type-xs);
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+
+.type-sm {
+  font-size: var(--type-sm);
+  line-height: 1.6;
+}
+
+.type-md {
+  font-size: var(--type-md);
+  line-height: 1.7;
+}
+
 :focus {
   outline: none;
 }
@@ -134,29 +200,10 @@ body {
   outline-offset: 2px;
 }
 
-.tile-glow::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: rgba(232, 255, 90, 0.04);
-  opacity: 0;
-  transition: opacity 200ms ease;
-  pointer-events: none;
-}
-
-.tile-glow:hover::before {
-  opacity: 0.5;
-}
-
-.tile-glow-selected::before {
-  opacity: 1;
-}
-
 .type-eyebrow {
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #4a4845;
+  color: var(--text-2);
   font-family: var(--font-dm-mono), monospace;
 }

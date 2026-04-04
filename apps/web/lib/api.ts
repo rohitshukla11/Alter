@@ -1,4 +1,15 @@
-const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+function apiBaseUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (raw) return raw.replace(/\/$/, "");
+  if (process.env.VERCEL) {
+    console.warn(
+      "[alter] NEXT_PUBLIC_API_URL is not set — browser calls will fail. Add it in Vercel → Settings → Environment Variables."
+    );
+  }
+  return "http://localhost:4000";
+}
+
+const base = apiBaseUrl();
 
 export async function apiGet<T>(path: string): Promise<T> {
   const r = await fetch(`${base}${path}`, { cache: "no-store" });

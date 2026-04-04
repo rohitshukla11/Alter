@@ -12,7 +12,7 @@ const dmMono = DM_Mono({
 
 const syne = Syne({
   subsets: ["latin"],
-  weight: "800",
+  weight: ["700", "800"],
   variable: "--font-syne",
 });
 
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${dmMono.variable} ${syne.variable}`}>
-      <body className={`${dmMono.className} bg-void font-mono text-primary antialiased`}>
+      <body className={`${dmMono.className} bg-[var(--bg-0)] font-mono text-[var(--text-0)] antialiased`}>
         <AppProviders>
           <AppFrame>{children}</AppFrame>
         </AppProviders>
