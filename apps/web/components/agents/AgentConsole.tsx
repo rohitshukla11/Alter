@@ -271,7 +271,7 @@ export function AgentConsole({ initialEns = "" }: Props) {
     }
   }
 
-  const logLines = lines.slice(-5);
+  const logLines = lines.slice(-3);
   const profession = agent?.profession?.trim() || "Advisor";
   const priceLabel = formatConsultationPrice(agent?.pricing ?? null);
   const isFree = priceLabel === "Free";
@@ -280,11 +280,11 @@ export function AgentConsole({ initialEns = "" }: Props) {
   const topDocs = (training?.docs ?? []).slice(0, 3);
 
   return (
-    <div className="flex min-h-[calc(100vh-8rem)] w-full border border-[var(--border-0)] bg-[var(--bg-0)]">
+    <div className="flex h-full min-h-0 w-full overflow-hidden border border-[var(--border-0)] bg-[var(--bg-0)]">
       {/* LEFT */}
-      <aside className="flex w-[260px] shrink-0 flex-col border-r border-[var(--border-0)] px-5 py-6">
+      <aside className="scrollbar-none flex min-h-0 w-[260px] shrink-0 flex-col overflow-y-auto border-r border-[var(--border-0)] px-4 py-4">
         <SectionLabel label="ADVISOR" />
-        <div className="mt-4">
+        <div className="mt-2">
           <UnderlineInput
             label="ENS NAME"
             value={targetEns}
@@ -310,9 +310,9 @@ export function AgentConsole({ initialEns = "" }: Props) {
 
         {agent ? (
           <>
-            <div className="my-5 h-px bg-[var(--border-0)]" />
-            <SectionLabel label="YOU ARE CONSULTING" className="mb-3" />
-            <div className="rounded-[var(--radius-sm)] border border-[var(--border-1)] bg-[var(--bg-1)] p-3">
+            <div className="my-3 h-px bg-[var(--border-0)]" />
+            <SectionLabel label="YOU ARE CONSULTING" className="mb-2" />
+            <div className="rounded-[var(--radius-sm)] border border-[var(--border-1)] bg-[var(--bg-1)] p-2.5">
               <div className="flex items-center gap-2">
                 <ProfessionGlyph profession={profession} size="sm" />
                 <span className="truncate font-mono text-[13px] font-medium text-[var(--text-0)]">{agent.name}</span>
@@ -336,20 +336,20 @@ export function AgentConsole({ initialEns = "" }: Props) {
               ) : null}
             </div>
 
-            <div className="my-5 h-px bg-[var(--border-0)]" />
-            <SectionLabel label="ON-CHAIN PROOF" className="mb-3" />
+            <div className="my-3 h-px bg-[var(--border-0)]" />
+            <SectionLabel label="ON-CHAIN PROOF" className="mb-2" />
             <HashDisplay hash={agent.configRoot || "—"} label="Config root" />
-            <div className="mt-3">
+            <div className="mt-2">
               <HashDisplay
                 hash={liveMemoryHead || "—"}
                 label="Memory root"
                 valueClassName={memoryFlash ? "!text-[var(--accent)]" : ""}
               />
-              <p className="mt-1 font-mono text-[10px] text-[var(--text-2)]">● live — updates each turn</p>
+              <p className="mt-0.5 font-mono text-[10px] text-[var(--text-2)]">● live — updates each turn</p>
             </div>
 
-            <div className="my-5 h-px bg-[var(--border-0)]" />
-            <SectionLabel label="LOG" className="mb-2" />
+            <div className="my-3 h-px bg-[var(--border-0)]" />
+            <SectionLabel label="LOG" className="mb-1.5" />
             <ul className="space-y-1">
               <AnimatePresence initial={false}>
                 {logLines.map((line) => (
@@ -388,7 +388,7 @@ export function AgentConsole({ initialEns = "" }: Props) {
       </aside>
 
       {/* CENTER */}
-      <section className="flex min-h-[480px] min-w-0 flex-1 flex-col border-r border-[var(--border-0)]">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col border-r border-[var(--border-0)]">
         <div className="flex h-11 shrink-0 items-center justify-between border-b border-[var(--border-0)] px-6">
           <span className="font-mono text-[11px] font-normal text-[var(--text-2)]">CONSULTATION CONSOLE</span>
           {agent ? (
@@ -396,10 +396,10 @@ export function AgentConsole({ initialEns = "" }: Props) {
           ) : null}
         </div>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-6">
+        <div className="scrollbar-none min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-6">
           {!messages.length && !pending ? (
             <p className="font-mono text-[12px] text-[var(--text-2)]">
-              Ask for structured professional advice. Each reply can show OpenClaw steps and updated memory roots on 0G.
+              Ask for tailored professional advice.
             </p>
           ) : null}
 
@@ -514,7 +514,7 @@ export function AgentConsole({ initialEns = "" }: Props) {
       </section>
 
       {/* RIGHT */}
-      <aside className="w-[280px] shrink-0 px-5 py-6">
+      <aside className="scrollbar-none flex min-h-0 w-[280px] shrink-0 flex-col overflow-y-auto px-4 py-4">
         <SectionLabel label="TRAINING CORPUS" />
         {training && (training.docCount ?? training.docs?.length ?? 0) > 0 ? (
           <div className="mt-3">

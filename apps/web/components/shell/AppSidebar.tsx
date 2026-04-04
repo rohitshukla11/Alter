@@ -45,7 +45,7 @@ export function AppSidebar() {
 
   return (
     <aside
-      className="flex h-screen w-[var(--sidebar-w)] shrink-0 flex-col border-r border-[var(--border-0)] bg-[var(--bg-0)]"
+      className="flex h-[100dvh] min-h-0 w-[var(--sidebar-w)] shrink-0 flex-col border-r border-[var(--border-0)] bg-[var(--bg-0)]"
       aria-label="App navigation"
     >
       <div className="pt-5">

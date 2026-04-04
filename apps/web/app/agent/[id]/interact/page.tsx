@@ -38,8 +38,8 @@ function InteractInner() {
   }, [id, fromPath]);
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center gap-3 font-mono text-[12px]">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <div className="flex shrink-0 flex-wrap items-center gap-3 font-mono text-[12px]">
         <Link href="/marketplace" className="text-tertiary no-underline hover:text-secondary">
           ← Explore
         </Link>
@@ -51,22 +51,27 @@ function InteractInner() {
           Profile
         </Link>
       </div>
-      <header>
-        <h1 className="font-display text-3xl font-extrabold leading-tight text-primary sm:text-4xl">
+      <header className="shrink-0">
+        <h1 className="font-display text-2xl font-extrabold leading-tight text-primary sm:text-3xl">
           Consultation
         </h1>
-        <p className="mt-3 max-w-subtitle font-mono text-[13px] text-secondary">
-          Ask for advice — OpenClaw execution and advisor memory on 0G, verifiable each turn.
-        </p>
       </header>
-      <AgentConsole initialEns={resolvedEns} />
+      <div className="min-h-0 flex-1">
+        <AgentConsole initialEns={resolvedEns} />
+      </div>
     </div>
   );
 }
 
 export default function AgentInteractPage() {
   return (
-    <Suspense fallback={<p className="font-mono text-[13px] text-tertiary">Loading…</p>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-0 flex-1 items-center justify-center font-mono text-[13px] text-tertiary">
+          Loading…
+        </div>
+      }
+    >
       <InteractInner />
     </Suspense>
   );

@@ -24,8 +24,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${dmMono.variable} ${syne.variable}`}>
-      <body className={`${dmMono.className} bg-[var(--bg-0)] font-mono text-[var(--text-0)] antialiased`}>
+    <html lang="en" className={`${dmMono.variable} ${syne.variable} h-[100dvh] overflow-hidden`}>
+      <body
+        className={`${dmMono.className} h-full max-h-[100dvh] overflow-hidden bg-[var(--bg-0)] font-mono text-[var(--text-0)] antialiased`}
+      >
         <AppProviders>
           <AppFrame>{children}</AppFrame>
         </AppProviders>

@@ -3,7 +3,7 @@ import { OnboardingFlow } from "@/components/onboarding/OnboardingFlow";
 
 function HomeFallback() {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center font-mono text-[13px] text-tertiary">
+    <div className="flex min-h-0 flex-1 items-center justify-center font-mono text-[13px] text-tertiary">
       Loading…
     </div>
   );

@@ -4,7 +4,11 @@ import { MarketplaceExplore } from "@/components/agents/MarketplaceExplore";
 export const dynamic = "force-dynamic";
 
 function AgentsFallback() {
-  return <p className="py-20 text-center font-mono text-[13px] text-tertiary">Loading…</p>;
+  return (
+    <div className="flex min-h-0 flex-1 items-center justify-center font-mono text-[13px] text-tertiary">
+      Loading…
+    </div>
+  );
 }
 
 /** Alias URL for Explore Agents (`/marketplace` and `/agents` share the same UI). */
