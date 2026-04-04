@@ -14,9 +14,9 @@ import { resolveAgentByENS } from "../indexer.js";
 const ALL_TOOLS = `Available tools (JSON arguments):
 - getMemory {} — snapshot of rolling conversation memory for this agent.
 - saveMemory {"note":"string"} — append operator-visible reflection.
-- fetchENSProfile {"name":"name.eth"} — Sepolia resolver text records (twinn.* / agent.*). Not Ethereum mainnet: famous names may return empty.
-- fetchAgentConfig {"name":"name.eth"} — ENS + 0G config summary for an agent.
-- mockWebSearch {"query":"string"} — hackathon mock SERP (use for generic “get some data” / research steps).
+- fetchENSProfile {"name":"name.eth"} — ONLY if the user's current message text literally contains that exact .eth name. Never invent names (yourproject.eth, example.eth, etc.). If the user did not type a .eth name, do not call this.
+- fetchAgentConfig {"name":"name.eth"} — same rule: the name must appear verbatim in the user's current message.
+- mockWebSearch {"query":"string"} — mock SERP for research-style lookups (preferred for generic legal/token questions when no ENS was given).
 - readEthBalance {"address":"0x..."} — Sepolia ETH balance (read-only).`;
 
 const DELEGATE_TOOL = `
@@ -56,7 +56,7 @@ export async function runOpenClawTurn(
   }
 
   const oc = (cfg.openClaw ?? {}) as OpenClawConfig;
-  const maxSteps = oc.maxSteps ?? 8;
+  const maxSteps = Math.min(oc.maxSteps ?? 5, 6);
 
   const { doc: priorDoc, headRoot } = await loadLatestClawMemory(target);
   const working: ToolContext["workingMemory"] = {
@@ -68,6 +68,7 @@ export async function runOpenClawTurn(
   const toolCtx: ToolContext = {
     subject: target,
     caller,
+    currentTurnUserText: userMessage,
     workingMemory: working,
     previousMemoryRoot: headRoot,
     delegatePeer: opts?.delegatePeer,
@@ -85,18 +86,19 @@ export async function runOpenClawTurn(
     console.log(`[RAG] Injected ${rag.sources.length} training docs for agent ${target.id} (OpenClaw)`);
   }
 
-  const baseSystem =
-    (cfg.systemPrompt?.trim() ||
-      `You are "${cfg.name}", a professional advisor on Alter (OpenClaw on 0G).
+  const FALLBACK_SYSTEM_PROMPT = `You are an expert advisor on Alter (OpenClaw on 0G). Answer questions directly with specific, actionable guidance. Never add disclaimers. Never use the role-colon opener (${'"' + "As a professional" + ' advisor:"'}). Never recommend that the user consult another ${"professional"}. You are the expert. Lead with substance, cite real frameworks by name, end with one follow-up question if needed. Never use markdown headers (no ##, no ---). Never use "Summary:" or "Overview:" as a header line.
+
 Expertise: ${cfg.expertise}
 Personality: ${cfg.personality}${sliderHints(cfg)}
 ${callerBlock}
 
-Turn discipline: earlier messages are background only. Each new user message is a fresh instruction—answer that message directly. Do not repeat prior tool calls (e.g. the same ENS lookup) unless the current message explicitly asks for them again. For open-ended “use tools / get data” tasks with no ENS name given, prefer mockWebSearch or getMemory—not a guess from old context.
+Turn discipline: earlier messages are background only. Each new user message is a fresh instruction—answer that message directly. Do not repeat prior tool calls (e.g. the same ENS lookup) unless the current message explicitly asks for them again. For open-ended "use tools / get data" tasks with no ENS name given, prefer mockWebSearch or getMemory—not a guess from old context.
 
-Use tools when you need live ENS/config data or to persist a reflection. Be concise.
+Use tools when they genuinely help. For ENS (fetchENSProfile / fetchAgentConfig): only if the user wrote that .eth name in their message — never guess a name. For broad advisory questions without ENS, prefer mockWebSearch or getMemory, or go straight to FINAL. Be concise.
 
-In FINAL replies: give specific, structured guidance (bullet-style mentally). Avoid generic openers like "you should consider several" without naming concrete factors next.`) + trainingInject;
+In FINAL replies: lead with the substantive answer first—never open with "To determine X, please provide Y." Give 2–4 concrete points, then at most one clarifying question.`;
+
+  const baseSystem = (cfg.systemPrompt?.trim() || FALLBACK_SYSTEM_PROMPT) + trainingInject;
 
   const toolsPrompt = pickToolsList(oc, Boolean(opts?.delegatePeer));
 

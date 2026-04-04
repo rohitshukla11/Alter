@@ -35,7 +35,13 @@ import {
   effectiveConfigRoot,
   hasAgentNamespaceRecords,
 } from "./ens.js";
-import { persistMemorySnippet, runUnifiedAgentTurn } from "./agentLogic.js";
+import {
+  ADVISOR_CRITICAL_RULES_FOOTER,
+  buildAdvisorPrompt,
+  persistMemorySnippet,
+  runUnifiedAgentTurn,
+} from "./agentLogic.js";
+import { cleanResponse } from "./openclaw/responseFormatter.js";
 import { is0GComputeProxyActive } from "./compute0g.js";
 import {
   listDiscoverableAgents,
@@ -144,32 +150,6 @@ const OPENCLAW_TOOLS_CSV =
 
 function hexRoot(r: string): string {
   return r.startsWith("0x") ? r : `0x${r}`;
-}
-
-function buildAdvisorSystemPrompt(opts: {
-  name: string;
-  profession: string;
-  specialization: string;
-  experience: string;
-  advisorTone: "formal" | "friendly" | "analytical";
-  pitch: string;
-}): string {
-  const toneHint =
-    opts.advisorTone === "formal"
-      ? "Use a formal, precise tone."
-      : opts.advisorTone === "analytical"
-        ? "Use an analytical, structured tone with clear reasoning and tradeoffs."
-        : "Use a warm, approachable tone while staying professional.";
-  return `You are a professional ${opts.profession} (advisor name: "${opts.name}").
-
-Specialization: ${opts.specialization}
-Experience: ${opts.experience}
-
-${toneHint}
-
-Your positioning: ${opts.pitch}
-
-You provide practical, structured advice. Stay in character as this expert. Use OpenClaw tools when you need live ENS data, peer agent configs, memory, or web context. Be concise unless the user asks for depth.`;
 }
 
 function buildNftTokenUri(metadataRoot: string): string {
@@ -339,13 +319,13 @@ export async function registerRoutes(app: FastifyInstance) {
     const agentId = `ens:${ensKey}`;
     const createdAt = new Date().toISOString();
     const systemPrompt = isWeb3ArchitectProfession(profession)
-      ? buildWeb3ArchitectSystemPrompt({
+      ? `${buildWeb3ArchitectSystemPrompt({
           name,
           specialization,
           experience,
           pitch: expertise,
-        })
-      : buildAdvisorSystemPrompt({
+        })}\n\n${ADVISOR_CRITICAL_RULES_FOOTER}`
+      : buildAdvisorPrompt({
           name,
           profession,
           specialization,
@@ -364,7 +344,7 @@ export async function registerRoutes(app: FastifyInstance) {
         "mockWebSearch",
         "readEthBalance",
       ],
-      maxSteps: 8,
+      maxSteps: 5,
     };
     const configMetaEnvelope = {
       ensFullName: ensKey,
@@ -893,6 +873,7 @@ export async function registerRoutes(app: FastifyInstance) {
               }
             : undefined;
       }
+      replyText = cleanResponse(replyText);
     } catch (e) {
       const t2 = getAgentById(target.id) ?? target;
       updateAgent(t2.id, {
@@ -1023,7 +1004,7 @@ export async function registerRoutes(app: FastifyInstance) {
         null,
         { delegatePeer: toA }
       );
-      hopFinal = r1.reply;
+      hopFinal = cleanResponse(r1.reply);
       provider = r1.provider;
       conversation.push({
         from: "A",

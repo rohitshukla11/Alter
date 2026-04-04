@@ -13,6 +13,13 @@ function truncate(s: string, n: number): string {
   return `${s.slice(0, n)}…`;
 }
 
+/** ENS/config tools only run when the user actually typed that name — stops placeholder names like yourproject.eth. */
+export function userMessageContainsEnsName(userText: string, nameRaw: string): boolean {
+  const name = nameRaw.trim().toLowerCase();
+  if (!name.endsWith(".eth") || name.length < 4) return false;
+  return userText.toLowerCase().includes(name);
+}
+
 async function toolGetMemory(ctx: ToolContext): Promise<string> {
   const lines = ctx.workingMemory.messages.map((m) => `[${m.role}] ${truncate(m.content, 2000)}`);
   return truncate(lines.join("\n"), MAX_MEMORY_CHARS) || "(empty)";
@@ -75,7 +82,11 @@ async function toolMockWebSearch(_ctx: ToolContext, args: Record<string, unknown
     query,
     results: [
       { title: "Reference 1", snippet: `Curated context for: ${query.slice(0, 80)}` },
-      { title: "Reference 2", snippet: "Supplement with ENS, memory, or domain reasoning as needed." },
+      {
+        title: "Reference 2",
+        snippet:
+          "Cross-check with getMemory if prior turns matter. Do not call ENS tools unless the user typed a .eth name in their message.",
+      },
     ],
   });
 }
@@ -103,10 +114,28 @@ export function createToolExecutor(ctx: ToolContext, invokePeer?: InvokePeerFn) 
         return toolGetMemory(ctx);
       case "saveMemory":
         return toolSaveMemory(ctx, args);
-      case "fetchENSProfile":
+      case "fetchENSProfile": {
+        const ensName = typeof args.name === "string" ? args.name : "";
+        if (!userMessageContainsEnsName(ctx.currentTurnUserText, ensName)) {
+          return JSON.stringify({
+            error: "skipped",
+            reason:
+              "fetchENSProfile only runs when the user message explicitly contains that exact .eth name. Never invent names (e.g. yourproject.eth). Use mockWebSearch or getMemory, or answer directly from training and expertise.",
+          });
+        }
         return toolFetchENSProfile(ctx, args);
-      case "fetchAgentConfig":
+      }
+      case "fetchAgentConfig": {
+        const cfgName = typeof args.name === "string" ? args.name : "";
+        if (!userMessageContainsEnsName(ctx.currentTurnUserText, cfgName)) {
+          return JSON.stringify({
+            error: "skipped",
+            reason:
+              "fetchAgentConfig only runs when the user message explicitly contains that exact .eth name. Never invent placeholder ENS. Use mockWebSearch or answer directly.",
+          });
+        }
         return toolFetchAgentConfig(ctx, args);
+      }
       case "mockWebSearch":
         return toolMockWebSearch(ctx, args);
       case "readEthBalance":

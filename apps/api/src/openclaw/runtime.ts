@@ -5,7 +5,7 @@ import type { InvokePeerFn } from "./tools.js";
 import { createToolExecutor } from "./tools.js";
 import type { ToolContext } from "./types.js";
 
-const DEFAULT_MAX = 8;
+const DEFAULT_MAX = 6;
 
 function extractToolCall(text: string): ToolCallPayload | null {
   const idx = text.indexOf("TOOL_CALL");
@@ -80,7 +80,9 @@ TOOL_CALL {"name":"<tool_name>","arguments":{...}}
 or
 FINAL {"reply":"<user-visible markdown-safe answer>"}
 
-If you need no tools, go straight to FINAL.`;
+If you need no tools, go straight to FINAL.
+
+Hard rule: never TOOL_CALL fetchENSProfile or fetchAgentConfig unless the [Current turn] message text explicitly contains that exact .eth name (user-typed). Invented names are blocked server-side — use mockWebSearch or FINAL instead.`;
 }
 
 /**

@@ -36,6 +36,8 @@ export type OpenClawConfig = {
 export type ToolContext = {
   subject: AgentRecord;
   caller: AgentRecord | null;
+  /** Current user line only — used to gate ENS tools against invented names. */
+  currentTurnUserText: string;
   /** Latest persisted memory document (mutable copy for tools) */
   workingMemory: {
     messages: { role: string; content: string }[];
