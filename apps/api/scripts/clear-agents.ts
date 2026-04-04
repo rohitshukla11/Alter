@@ -5,4 +5,4 @@
 import { clearAllAgents } from "../src/db.js";
 
 clearAllAgents();
-console.log("Counselr: cleared all agents from registry (wallets / sessions unchanged).");
+console.log("Alter: cleared all agents from registry (wallets / sessions unchanged).");

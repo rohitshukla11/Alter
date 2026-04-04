@@ -1,5 +1,5 @@
 /**
- * Shapes raw model output into consultation-style text for Counselr (presentation only).
+ * Shapes raw model output into consultation-style text for Alter (presentation only).
  */
 
 function stripExistingRolePrefix(text: string): string {

@@ -1,7 +1,7 @@
 import type { AgentIndexEntry, AgentRecord } from "./types.js";
 
 /**
- * Counselr mints OpenClaw agents; older `registry.json` rows may omit `agentType`.
+ * Alter mints OpenClaw agents; older `registry.json` rows may omit `agentType`.
  * Explicit non-openclaw types should set `agentType` to something other than openclaw / empty.
  */
 export function agentRecordIsOpenClaw(a: AgentRecord | undefined): boolean {

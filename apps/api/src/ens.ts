@@ -318,7 +318,7 @@ export async function tryWriteEnsTwinRecords(fullName: string, opts: WriteEnsTwi
     ["twinn.agentType", agentType],
     ["twinn.runtime", runtimeTwin],
     ["twinn.tools", tools],
-    ["description", `Counselr AI agent — token ${opts.tokenId}`],
+    ["description", `Alter AI agent — token ${opts.tokenId}`],
     ["agent.config", opts.configRoot],
     ["agent.owner", owner],
     ["agent.runtime", runtimeAgent],
@@ -366,7 +366,7 @@ export async function tryWriteEnsIndexManifest(indexRoot: string): Promise<boole
 }
 
 /** Best-effort: publish verifiable training manifest pointer on the agent's ENS name. */
-export async function tryWriteCounselrTrainingRecords(
+export async function tryWriteAlterTrainingRecords(
   fullName: string,
   opts: { trainingRoot: string; docCount: number }
 ): Promise<boolean> {
@@ -374,8 +374,14 @@ export async function tryWriteCounselrTrainingRecords(
   if (!root) return false;
   const day = new Date().toISOString().split("T")[0]!;
   return setTexts(fullName, [
+    ["alter.trainingRoot", root],
+    ["alter.trainingDocs", String(opts.docCount)],
+    ["alter.trainingUpdated", day],
     ["counselr.trainingRoot", root],
     ["counselr.trainingDocs", String(opts.docCount)],
     ["counselr.trainingUpdated", day],
   ]);
 }
+
+/** @deprecated Use tryWriteAlterTrainingRecords — alias kept for older imports. */
+export const tryWriteCounselrTrainingRecords = tryWriteAlterTrainingRecords;

@@ -8,7 +8,7 @@ import {
   removeTrainingDoc,
   getTrainingDocs,
 } from "./db.js";
-import { tryWriteCounselrTrainingRecords } from "./ens.js";
+import { tryWriteAlterTrainingRecords } from "./ens.js";
 import type { TrainingDocumentRecord } from "./types.js";
 import type { RagSource } from "./openclaw/types.js";
 
@@ -16,7 +16,7 @@ export type TrainingDocument = TrainingDocumentRecord;
 export type { RagSource };
 
 export interface TrainingManifest {
-  type: "counselr-training-manifest/v1";
+  type: "alter-training-manifest/v1" | "counselr-training-manifest/v1";
   agent: string;
   agentId: string;
   docCount: number;
@@ -79,7 +79,7 @@ export async function rebuildManifest(agentId: string): Promise<string> {
   const totalSizeBytes = docs.reduce((sum, d) => sum + d.sizeBytes, 0);
 
   const manifestBody: Omit<TrainingManifest, "manifestHash"> = {
-    type: "counselr-training-manifest/v1",
+    type: "alter-training-manifest/v1",
     agent: agent.ensFullName || agentId,
     agentId,
     docCount: docs.length,
@@ -108,7 +108,7 @@ export async function rebuildManifest(agentId: string): Promise<string> {
 
   if (agent.ensFullName) {
     try {
-      await tryWriteCounselrTrainingRecords(agent.ensFullName, {
+      await tryWriteAlterTrainingRecords(agent.ensFullName, {
         trainingRoot: manifestRoot,
         docCount: docs.length,
       });

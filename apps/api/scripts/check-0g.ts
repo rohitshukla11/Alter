@@ -12,7 +12,7 @@ const { createZGComputeNetworkReadOnlyBroker }: typeof import("@0glabs/0g-servin
   require("@0glabs/0g-serving-broker");
 
 async function main() {
-  console.log("Counselr — 0G integration check\n");
+  console.log("Alter — 0G integration check\n");
 
   console.log("ZG_RPC_URL:", config.zgRpc);
   const evm = new JsonRpcProvider(config.zgRpc);

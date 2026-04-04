@@ -1,14 +1,14 @@
 import { downloadFrom0G, uploadJsonTo0G } from "./storage0g.js";
 import type { AgentIndexEntry } from "./types.js";
 
-export const AGENT_INDEX_SCHEMA = "counselr-agent-index/v1" as const;
-export const AGENT_INDEX_SCHEMA_LEGACY_ALTER = "alter-agent-index/v1" as const;
+export const AGENT_INDEX_SCHEMA = "alter-agent-index/v1" as const;
+export const AGENT_INDEX_SCHEMA_LEGACY_COUNSELR = "counselr-agent-index/v1" as const;
 export const AGENT_INDEX_SCHEMA_LEGACY = "twinnet-agent-index/v1" as const;
 
 export type AgentIndexManifest = {
   schema:
     | typeof AGENT_INDEX_SCHEMA
-    | typeof AGENT_INDEX_SCHEMA_LEGACY_ALTER
+    | typeof AGENT_INDEX_SCHEMA_LEGACY_COUNSELR
     | typeof AGENT_INDEX_SCHEMA_LEGACY;
   entries: AgentIndexEntry[];
   updatedAt: string;
@@ -17,7 +17,7 @@ export type AgentIndexManifest = {
 function isAgentIndexSchema(s: unknown): s is AgentIndexManifest["schema"] {
   return (
     s === AGENT_INDEX_SCHEMA ||
-    s === AGENT_INDEX_SCHEMA_LEGACY_ALTER ||
+    s === AGENT_INDEX_SCHEMA_LEGACY_COUNSELR ||
     s === AGENT_INDEX_SCHEMA_LEGACY
   );
 }

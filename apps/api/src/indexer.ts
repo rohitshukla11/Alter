@@ -45,7 +45,7 @@ export async function resolveAgentByConfigRoot(root: string): Promise<AgentRecor
   try {
     const raw = await downloadFrom0G(root);
     const j = JSON.parse(raw) as Record<string, unknown>;
-    const meta = (j._counselr ?? j._alter ?? j._twinnet) as
+    const meta = (j._alter ?? j._counselr ?? j._twinnet) as
       | {
           agentId?: string;
           ensFullName?: string;

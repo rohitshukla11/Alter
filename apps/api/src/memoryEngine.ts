@@ -187,6 +187,12 @@ export async function maybeRunReflection(agentId: string): Promise<boolean> {
       owner: agent.owner,
       version: nextVersion,
     },
+    _alter: {
+      ensFullName: agent.ensFullName,
+      tokenId: agent.tokenId,
+      owner: agent.owner,
+      version: nextVersion,
+    },
   };
   const newRoot = await uploadJsonTo0G(body);
 

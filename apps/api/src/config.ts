@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-/* Monorepo: `.env` usually lives at repo root; `npm run dev -w @counselr/api` cwd is `apps/api`,
+/* Monorepo: `.env` usually lives at repo root; `npm run dev -w @alter/api` cwd is `apps/api`,
    so default `dotenv/config` never saw root `.env`. Load both; `apps/api/.env` overrides. */
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
@@ -58,7 +58,7 @@ export const config = {
   inftAddress: opt("INFT_CONTRACT_ADDRESS", ""),
   inftOwnerPrivateKey: opt("INFT_OWNER_PRIVATE_KEY", ""),
 
-  /** `{root}` / `{metadataRoot}` replaced with 0x-prefixed root. Default: counselr-0g-metadata:0x… (no Counselr API). */
+  /** `{root}` / `{metadataRoot}` replaced with 0x-prefixed root. Default: alter-0g-metadata:0x… (no Alter API). */
   nftTokenUriTemplate: opt("NFT_TOKEN_URI_TEMPLATE", ""),
 
   /** If true, POST /agents also writes into registry.json so GET /agents / marketplace lists new mints immediately. */
@@ -67,7 +67,7 @@ export const config = {
   wldRpId: opt("WLD_RP_ID", ""),
   wldAppId: opt("WLD_APP_ID", ""),
   wldSigningKeyHex: opt("WLD_SIGNING_KEY_HEX", ""),
-  wldAction: opt("WLD_ACTION", "counselr-verify"),
+  wldAction: opt("WLD_ACTION", "alter-verify"),
   wldEnvironment: (opt("WLD_ENVIRONMENT", "production") as "production" | "staging") || "production",
 
   dataDir: opt("DATA_DIR", "./data"),

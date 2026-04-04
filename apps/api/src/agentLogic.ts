@@ -5,6 +5,10 @@ import { isOpenClawEnabled } from "./openclaw/config.js";
 import type { OpenClawConfig } from "./openclaw/types.js";
 import type { RagSource, RunAgentResult } from "./openclaw/types.js";
 import { getTrainingRagForInference } from "./trainingData.js";
+import {
+  buildWeb3ArchitectSystemPrompt,
+  isWeb3ArchitectProfession,
+} from "./web3Architect.js";
 
 export type AgentConfigEnvelope = {
   agentId?: string;
@@ -28,9 +32,9 @@ export type AgentConfig = {
   configVersion?: number;
   version?: number;
   openClaw?: OpenClawConfig;
-  _counselr?: AgentConfigEnvelope;
-  /** Legacy 0G config envelopes (readers prefer `_counselr`, then `_alter`, then `_twinnet`). */
+  /** Primary + legacy 0G config envelopes (readers prefer `_alter`, then `_counselr`, then `_twinnet`). */
   _alter?: AgentConfigEnvelope;
+  _counselr?: AgentConfigEnvelope;
   _twinnet?: AgentConfigEnvelope;
 };
 
@@ -49,6 +53,19 @@ export async function loadAgentConfig(agent: AgentRecord): Promise<AgentConfig> 
   const cfg = JSON.parse(raw) as AgentConfig;
   const personality = personalityToString(cfg.personality, agent.personality || "");
   return { ...cfg, personality };
+}
+
+/** When profession is Web3 Architect, ensure 0G config carries the full specialist prompt (e.g. after reflection rewrote config). */
+export function ensureWeb3ArchitectSystemPrompt(agent: AgentRecord, cfg: AgentConfig): void {
+  if (!isWeb3ArchitectProfession(agent.profession)) return;
+  const marker = "You are a Web3 Architect";
+  if (cfg.systemPrompt?.includes(marker)) return;
+  cfg.systemPrompt = buildWeb3ArchitectSystemPrompt({
+    name: agent.name,
+    specialization: agent.specialization ?? "",
+    experience: agent.experience ?? "",
+    pitch: agent.expertise,
+  });
 }
 
 /** Naive RAG: memory roots + optional long-term summaries. */
@@ -87,6 +104,7 @@ export async function runAgentTurnDetailed(
   caller?: AgentRecord | null
 ): Promise<{ reply: string; provider: string; ragSources?: RagSource[] }> {
   const cfg = await loadAgentConfig(target);
+  ensureWeb3ArchitectSystemPrompt(target, cfg);
   const training = await getTrainingRagForInference(target.id, userMessage);
   const rag = await buildRagContext(target);
   const callerBlock = caller

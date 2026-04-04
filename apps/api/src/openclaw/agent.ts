@@ -1,6 +1,6 @@
 import type { AgentRecord } from "../types.js";
 import type { AgentConfig } from "../agentLogic.js";
-import { loadAgentConfig } from "../agentLogic.js";
+import { ensureWeb3ArchitectSystemPrompt, loadAgentConfig } from "../agentLogic.js";
 import { runAgentLoop } from "./runtime.js";
 import { formatProfessionalResponse } from "./responseFormatter.js";
 import { summarizeStep } from "./summarizeStep.js";
@@ -50,6 +50,7 @@ export async function runOpenClawTurn(
   opts?: { delegatePeer?: AgentRecord }
 ): Promise<RunAgentResult> {
   const cfg = await loadAgentConfig(target);
+  ensureWeb3ArchitectSystemPrompt(target, cfg);
   if (!isOpenClawEnabled(cfg)) {
     throw new Error("OpenClaw disabled for this agent (openClaw.enabled=false)");
   }
@@ -86,7 +87,7 @@ export async function runOpenClawTurn(
 
   const baseSystem =
     (cfg.systemPrompt?.trim() ||
-      `You are "${cfg.name}", a professional advisor on Counselr (OpenClaw on 0G).
+      `You are "${cfg.name}", a professional advisor on Alter (OpenClaw on 0G).
 Expertise: ${cfg.expertise}
 Personality: ${cfg.personality}${sliderHints(cfg)}
 ${callerBlock}

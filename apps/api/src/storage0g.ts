@@ -46,7 +46,7 @@ export async function downloadFrom0G(rootHash: string): Promise<string> {
 /** Download by root hash; returns raw bytes. */
 export async function downloadBufferFrom0G(rootHash: string): Promise<Buffer> {
   const ind = getIndexer();
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "counselr-0g-"));
+  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "alter-0g-"));
   const out = path.join(dir, "blob");
   const dlErr = await ind.download(rootHash, out, true);
   if (dlErr) throw new Error(`0G download: ${dlErr}`);

@@ -1,5 +1,5 @@
 /**
- * CLI: reconstruct Counselr agent from Sepolia ENS + 0G (twinn.* and/or ENSIP-style agent.*).
+ * CLI: reconstruct Alter agent from Sepolia ENS + 0G (twinn.* and/or ENSIP-style agent.*).
  * Usage: npm run resolve:ens -- name.eth
  */
 import {

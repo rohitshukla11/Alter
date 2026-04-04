@@ -27,5 +27,5 @@ export function buildProofHash(prompt: string, response: string, configRoot: str
 }
 
 export async function persistAttestation(att: TurnAttestation): Promise<string> {
-  return uploadJsonTo0G({ type: "counselr-attestation/v1", ...att });
+  return uploadJsonTo0G({ type: "alter-attestation/v1", ...att });
 }

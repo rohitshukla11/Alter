@@ -54,6 +54,12 @@ import {
   mergeClawMemoryForTurn,
 } from "./memoryEngine.js";
 import { verifyAgentIntegrity } from "./integrity.js";
+import {
+  buildWeb3ArchitectSystemPrompt,
+  getWeb3ArchitectKnowledgeBase,
+  getWeb3ArchitectTrainingData,
+  isWeb3ArchitectProfession,
+} from "./web3Architect.js";
 import { agentRecordIsOpenClaw, listRowIsOpenClaw } from "./agentOpenClaw.js";
 import type { AgentRecord } from "./types.js";
 import type { RagSource } from "./openclaw/types.js";
@@ -170,7 +176,7 @@ function buildNftTokenUri(metadataRoot: string): string {
   const raw = hexRoot(metadataRoot);
   const t = config.nftTokenUriTemplate.trim();
   if (t) return t.replace(/\{root\}/g, raw).replace(/\{metadataRoot\}/g, raw);
-  return `counselr-0g-metadata:${raw}`;
+  return `alter-0g-metadata:${raw}`;
 }
 
 async function buildVersionsPayload(a: AgentRecord) {
@@ -332,14 +338,21 @@ export async function registerRoutes(app: FastifyInstance) {
     const ensKey = ensFullName.toLowerCase();
     const agentId = `ens:${ensKey}`;
     const createdAt = new Date().toISOString();
-    const systemPrompt = buildAdvisorSystemPrompt({
-      name,
-      profession,
-      specialization,
-      experience,
-      advisorTone,
-      pitch: expertise,
-    });
+    const systemPrompt = isWeb3ArchitectProfession(profession)
+      ? buildWeb3ArchitectSystemPrompt({
+          name,
+          specialization,
+          experience,
+          pitch: expertise,
+        })
+      : buildAdvisorSystemPrompt({
+          name,
+          profession,
+          specialization,
+          experience,
+          advisorTone,
+          pitch: expertise,
+        });
     const openClaw = {
       version: 1 as const,
       enabled: true,
@@ -352,6 +365,21 @@ export async function registerRoutes(app: FastifyInstance) {
         "readEthBalance",
       ],
       maxSteps: 8,
+    };
+    const configMetaEnvelope = {
+      ensFullName: ensKey,
+      owner: wallet.toLowerCase(),
+      tokenId: 0,
+      version: 1,
+      ...(isWeb3ArchitectProfession(profession)
+        ? {
+            web3Architect: {
+              version: 1 as const,
+              trainingData: getWeb3ArchitectTrainingData(),
+              knowledgeBase: getWeb3ArchitectKnowledgeBase(),
+            },
+          }
+        : {}),
     };
     const configPayload = {
       version: 1,
@@ -378,12 +406,8 @@ export async function registerRoutes(app: FastifyInstance) {
         createdAt,
         creator: wallet.toLowerCase(),
       },
-      _counselr: {
-        ensFullName: ensKey,
-        owner: wallet.toLowerCase(),
-        tokenId: 0,
-        version: 1,
-      },
+      _counselr: configMetaEnvelope,
+      _alter: configMetaEnvelope,
     };
 
     let configRoot: string;
@@ -394,7 +418,7 @@ export async function registerRoutes(app: FastifyInstance) {
     }
 
     const nftMetadata = {
-      name: `${name} — Counselr`,
+      name: `${name} — Alter`,
       description: expertise.slice(0, 280),
       image:
         "https://raw.githubusercontent.com/0gfoundation/0g-storage-ts-starter-kit/master/web/public/logo.png",
@@ -403,7 +427,7 @@ export async function registerRoutes(app: FastifyInstance) {
         { trait_type: "Profession", value: profession },
         { trait_type: "Specialization", value: specialization.slice(0, 80) },
         { trait_type: "0G Config Root", value: configRoot },
-        { trait_type: "Protocol", value: "Counselr/OpenClaw/1" },
+        { trait_type: "Protocol", value: "Alter/OpenClaw/1" },
         { trait_type: "AgentType", value: "openclaw" },
       ],
     };
@@ -780,7 +804,7 @@ export async function registerRoutes(app: FastifyInstance) {
     const a = (await getAgentResilientById(agentId)) ?? getAgentById(agentId);
     if (!a) return reply.code(404).send({ error: "Not found" });
     return {
-      name: `${a.name} — Counselr`,
+      name: `${a.name} — Alter`,
       description: a.expertise.slice(0, 280),
       image: "https://raw.githubusercontent.com/0gfoundation/0g-storage-ts-starter-kit/master/web/public/logo.png",
       attributes: [
