@@ -20,6 +20,7 @@ export type MarketplaceAgent = {
   advisorTone?: string;
   personalitySliders: PersonalitySliders | null;
   pricing?: AgentPricing | null;
+  trainingDocCount?: number;
 };
 
 export type AgentPricing = {
@@ -65,10 +66,28 @@ export type PublicAgent = {
   memoryHead?: string | null;
   pricing?: AgentPricing | null;
   createdAt?: string;
+  trainingRoot?: string | null;
+  trainingDocCount?: number;
+  trainingUpdatedAt?: number | null;
+};
+
+export type RagSourcePayload = { filename: string; hash: string };
+
+/** Row from training corpus API */
+export type TrainingDocument = {
+  id: string;
+  agentId: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  hash: string;
+  uploadedAt: number;
+  description?: string;
 };
 
 export type ExecutionLogPayload = {
   mode?: string;
+  ragSources?: RagSourcePayload[];
   steps?: ExecutionStepPayload[];
   toolsUsed?: unknown[];
 } | null;
@@ -90,6 +109,7 @@ export type AgentRequestResponse = {
   agentId: string;
   openClaw?: boolean;
   executionLog?: ExecutionLogPayload;
+  ragSources?: RagSourcePayload[];
 };
 
 export type DelegateResponse = {

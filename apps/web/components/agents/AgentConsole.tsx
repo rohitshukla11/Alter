@@ -13,7 +13,12 @@ import { ExecutionLogViewer } from "./ExecutionLogViewer";
 import { MemoryUpdateBadge } from "./MemoryUpdateBadge";
 import Link from "next/link";
 import { useCommandLog } from "@/components/command-log/CommandLogProvider";
-import { formatConsultationPrice, professionEmoji } from "@/lib/advisorUi";
+import {
+  formatConsultationPrice,
+  formatProfessionLabel,
+  isWeb3ArchitectProfession,
+  professionEmoji,
+} from "@/lib/advisorUi";
 
 type UserMsg = { role: "user"; text: string };
 
@@ -65,6 +70,13 @@ export function AgentConsole({ initialEns = "" }: Props) {
   }, [initialEns]);
 
   const normalizedEns = useMemo(() => targetEns.trim().toLowerCase(), [targetEns]);
+
+  const askPlaceholder = useMemo(() => {
+    if (agent && isWeb3ArchitectProfession(agent.profession)) {
+      return 'e.g. "Design a token for my DeFi lending platform"';
+    }
+    return 'Ask for advice (e.g. "What legal risks should I consider before launching a token?")';
+  }, [agent]);
 
   const loadAgent = useCallback(async () => {
     if (!normalizedEns) {
@@ -208,7 +220,9 @@ export function AgentConsole({ initialEns = "" }: Props) {
                 <span className="mr-1" aria-hidden>
                   {professionEmoji(agent.profession ?? "Advisor")}
                 </span>
-                <span className="font-medium">{agent.specialization?.trim() || agent.profession?.trim() || "Advisor"}</span>
+                <span className="font-medium">
+                  {agent.specialization?.trim() || formatProfessionLabel(agent.profession) || "Advisor"}
+                </span>
                 <span className="text-tertiary"> · </span>
                 <span className="text-accent">{agent.ensFullName}</span>
               </p>
@@ -352,7 +366,7 @@ export function AgentConsole({ initialEns = "" }: Props) {
                       send().catch(() => {});
                     }
                   }}
-                  placeholder='Ask for advice (e.g. "What legal risks should I consider before launching a token?")'
+                  placeholder={askPlaceholder}
                   className="h-11 w-full rounded-control border border-mid bg-void px-3.5 font-mono text-[13px] text-primary placeholder:text-tertiary focus:border-accent focus:outline-none"
                   disabled={pending}
                   aria-label="Ask for advice"

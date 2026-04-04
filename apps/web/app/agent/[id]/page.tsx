@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { apiGet } from "@/lib/api";
-import { formatConsultationPrice, professionEmoji } from "@/lib/advisorUi";
+import {
+  formatConsultationPrice,
+  formatProfessionLabel,
+  isWeb3ArchitectProfession,
+  professionEmoji,
+} from "@/lib/advisorUi";
 import type { AgentPricing } from "@/lib/agentTypes";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +30,9 @@ type Agent = {
   experience?: string | null;
   advisorTone?: string | null;
   pricing?: AgentPricing | null;
+  trainingRoot?: string | null;
+  trainingDocCount?: number;
+  trainingUpdatedAt?: number | null;
 };
 
 export default async function AgentProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -57,6 +65,7 @@ export default async function AgentProfilePage({ params }: { params: Promise<{ i
   }
 
   const profession = agent.profession?.trim() || "Advisor";
+  const professionLabel = formatProfessionLabel(agent.profession);
   const emoji = professionEmoji(profession);
   const specialization = agent.specialization?.trim() || "Professional advisory";
 
@@ -74,6 +83,13 @@ export default async function AgentProfilePage({ params }: { params: Promise<{ i
         </Link>
         <span className="text-tertiary">·</span>
         <Link
+          href={`/agent/${encodeURIComponent(agent.id)}/training`}
+          className="text-accent no-underline underline-offset-4 hover:text-[#F0FF70]"
+        >
+          Training data{(agent.trainingDocCount ?? 0) > 0 ? ` (${agent.trainingDocCount})` : ""}
+        </Link>
+        <span className="text-tertiary">·</span>
+        <Link
           href={`/agent/${encodeURIComponent(agent.id)}/deployment`}
           className="text-accent no-underline underline-offset-4 hover:text-[#F0FF70]"
         >
@@ -86,13 +102,18 @@ export default async function AgentProfilePage({ params }: { params: Promise<{ i
           <span className="mr-1.5" aria-hidden>
             {emoji}
           </span>
-          {profession}
+          {professionLabel}
         </p>
         <h1 className="mt-2 font-display text-3xl font-extrabold leading-tight text-primary sm:text-4xl">
           {specialization}
         </h1>
         <p className="mt-2 font-mono text-[14px] text-secondary">{agent.name}</p>
         <p className="mt-1 font-mono text-[13px] text-tertiary">{agent.ensFullName}</p>
+        {isWeb3ArchitectProfession(agent.profession) ? (
+          <p className="mt-3 max-w-subtitle font-mono text-[12px] leading-relaxed text-secondary">
+            This AI represents your Web3 expertise and helps design token launches.
+          </p>
+        ) : null}
         <p className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[13px] text-secondary">
           <span>
             Owner <span className="text-primary">{agent.owner}</span>
@@ -171,6 +192,20 @@ export default async function AgentProfilePage({ params }: { params: Promise<{ i
           Reputation: {agent.reputation.interactions} consultations started, {agent.reputation.successes} completed
           successfully.
         </p>
+        {(agent.trainingDocCount ?? 0) > 0 ? (
+          <p className="mt-3 font-mono text-[11px] text-tertiary">
+            Training corpus:{" "}
+            <Link href={`/agent/${encodeURIComponent(agent.id)}/training`} className="text-accent no-underline hover:underline">
+              {agent.trainingDocCount} documents on 0G
+            </Link>
+            {agent.trainingRoot ? (
+              <>
+                {" "}
+                · manifest <span className="text-secondary">{String(agent.trainingRoot).slice(0, 10)}…</span>
+              </>
+            ) : null}
+          </p>
+        ) : null}
       </section>
 
       <section className="rounded-ui border border-dim bg-raised p-7">

@@ -83,7 +83,7 @@ export function MarketplaceExplore() {
       <header className="relative z-[1] mb-10">
         <h1 className="font-display text-4xl font-extrabold leading-none text-primary">Explore Advisors</h1>
         <p className="mt-3 max-w-subtitle font-mono text-[13px] text-secondary">
-          AI advisors powered by real professionals — consult on-chain identities with verifiable memory on 0G.
+          Alter — AI advisors powered by real professionals. Consult on-chain identities with verifiable memory on 0G.
         </p>
       </header>
 

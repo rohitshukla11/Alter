@@ -1,7 +1,7 @@
-const TOKEN_KEY = "counselr_jwt";
-const LEGACY_TOKEN_KEYS = ["alter_jwt", "twinnet_jwt"] as const;
-const VERIFIED_AT_KEY = "counselr_worldid_verified_at";
-const LEGACY_VERIFIED_AT_KEYS = ["alter_worldid_verified_at", "twinnet_worldid_verified_at"] as const;
+const TOKEN_KEY = "alter_jwt";
+const LEGACY_TOKEN_KEYS = ["counselr_jwt", "twinnet_jwt"] as const;
+const VERIFIED_AT_KEY = "alter_worldid_verified_at";
+const LEGACY_VERIFIED_AT_KEYS = ["counselr_worldid_verified_at", "twinnet_worldid_verified_at"] as const;
 
 export function getStoredToken(): string | null {
   if (typeof window === "undefined") return null;

@@ -67,7 +67,7 @@ export function StepCreate({ onMinted, advisorTemplateId = null }: Props) {
   const { push } = useCommandLog();
   const { address } = useAccount();
   const [name, setName] = useState("");
-  const [professionChoice, setProfessionChoice] = useState<ProfessionValue | "Custom">("Consultant");
+  const [professionChoice, setProfessionChoice] = useState<ProfessionValue | "Custom">("web3-architect");
   const [customProfession, setCustomProfession] = useState("");
   const [specialization, setSpecialization] = useState("");
   const [experience, setExperience] = useState("");
@@ -104,7 +104,7 @@ export function StepCreate({ onMinted, advisorTemplateId = null }: Props) {
 
   const personality = useMemo(
     () =>
-      `Consultation style: ${TONE_OPTIONS.find((x) => x.value === advisorTone)?.label ?? advisorTone}. Counselr professional advisor.`,
+      `Consultation style: ${TONE_OPTIONS.find((x) => x.value === advisorTone)?.label ?? advisorTone}. Alter professional advisor.`,
     [advisorTone]
   );
 

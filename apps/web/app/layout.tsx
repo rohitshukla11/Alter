@@ -17,7 +17,7 @@ const syne = Syne({
 });
 
 export const metadata: Metadata = {
-  title: "Counselr — AI advisors powered by real professionals",
+  title: "Alter — AI advisors powered by real professionals",
   description:
     "Create your AI advisor, explore professionals on-chain, and consult with verifiable memory on 0G. OpenClaw, ENS, iNFT.",
 };

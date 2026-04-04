@@ -1,5 +1,9 @@
+/** Stored slug for default demo profession — must match API `web3Architect.ts`. */
+export const WEB3_ARCHITECT_PROFESSION_VALUE = "web3-architect";
+
 /** Shared profession labels + emoji for marketplace and create flow. */
 export const PROFESSION_OPTIONS = [
+  { value: "web3-architect", label: "Web3 Architect", emoji: "🏗️" },
   { value: "Lawyer", label: "Lawyer", emoji: "⚖️" },
   { value: "Trader", label: "Trader", emoji: "📈" },
   { value: "Developer", label: "Developer", emoji: "💻" },
@@ -8,6 +12,18 @@ export const PROFESSION_OPTIONS = [
 ] as const;
 
 export type ProfessionValue = (typeof PROFESSION_OPTIONS)[number]["value"];
+
+/** Human-readable profession for cards and headers (handles stored slug). */
+export function formatProfessionLabel(stored: string | null | undefined): string {
+  const s = (stored ?? "").trim();
+  if (!s) return "Advisor";
+  if (s.toLowerCase() === WEB3_ARCHITECT_PROFESSION_VALUE) return "Web3 Architect (Token Specialist)";
+  return s;
+}
+
+export function isWeb3ArchitectProfession(stored: string | null | undefined): boolean {
+  return (stored ?? "").trim().toLowerCase() === WEB3_ARCHITECT_PROFESSION_VALUE;
+}
 
 export function professionEmoji(profession: string): string {
   const p = profession.trim().toLowerCase();

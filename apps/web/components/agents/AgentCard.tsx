@@ -3,7 +3,12 @@
 import Link from "next/link";
 import type { MarketplaceAgent } from "@/lib/agentTypes";
 import { shortenRoot } from "@/lib/formatRoot";
-import { formatConsultationPrice, professionEmoji } from "@/lib/advisorUi";
+import {
+  formatConsultationPrice,
+  formatProfessionLabel,
+  isWeb3ArchitectProfession,
+  professionEmoji,
+} from "@/lib/advisorUi";
 
 type Props = {
   agent: MarketplaceAgent;
@@ -12,6 +17,7 @@ type Props = {
 
 export function AgentCard({ agent, active }: Props) {
   const profession = agent.profession?.trim() || "Advisor";
+  const professionLabel = formatProfessionLabel(agent.profession);
   const emoji = professionEmoji(profession);
   const specialization = agent.specialization?.trim() || "Professional advisory";
   const experience = agent.experience?.trim() || "";
@@ -34,7 +40,7 @@ export function AgentCard({ agent, active }: Props) {
             <span className="mr-1" aria-hidden>
               {emoji}
             </span>
-            {profession}
+            {professionLabel}
           </p>
           <h3 className="mt-1 font-mono text-[15px] font-medium text-primary">{specialization}</h3>
           <p className="mt-1 font-mono text-[12px] text-secondary">{agent.ensFullName}</p>
@@ -47,6 +53,11 @@ export function AgentCard({ agent, active }: Props) {
             {agent.verifiedHumanTwin ? (
               <span className="rounded-full border border-[rgba(74,222,128,0.35)] bg-[rgba(74,222,128,0.08)] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-success">
                 Human verified
+              </span>
+            ) : null}
+            {isWeb3ArchitectProfession(agent.profession) ? (
+              <span className="rounded-full border border-[rgba(251,146,60,0.45)] bg-[rgba(251,146,60,0.1)] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-[#fdba74]">
+                🔥 Token Launch Expert
               </span>
             ) : null}
           </div>

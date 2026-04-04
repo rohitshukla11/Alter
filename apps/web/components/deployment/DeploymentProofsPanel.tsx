@@ -40,7 +40,7 @@ export function DeploymentProofsPanel({
 
   return (
     <div className="space-y-4 rounded-control border border-[rgba(74,222,128,0.25)] bg-[rgba(74,222,128,0.06)] p-5">
-      <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-success">Deployment &amp; proofs — 0G + Counselr</p>
+      <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-success">Deployment &amp; proofs — 0G + Alter</p>
       <p className="font-mono text-[11px] leading-relaxed text-tertiary">
         Persona config is stored on <span className="text-secondary">0G Storage</span> (Merkle root below). The iNFT lives on{" "}
         <span className="text-secondary">{deployment.chainName}</span> (chainId {deployment.chainId}). Confirm the mint and

@@ -26,6 +26,12 @@ function labelForStep(s: ExecutionStepPayload): string {
   return s.detail?.slice(0, 120) || "Step";
 }
 
+function isTrainingFetchStep(s: ExecutionStepPayload): boolean {
+  return Boolean(
+    s.shortSummary?.startsWith("Fetching training doc") || s.detail?.startsWith("Fetching training doc")
+  );
+}
+
 type Props = {
   executionLog: ExecutionLogPayload;
   defaultOpen?: boolean;
@@ -33,8 +39,11 @@ type Props = {
 
 export function ExecutionLogViewer({ executionLog, defaultOpen = false }: Props) {
   const [open, setOpen] = useState(defaultOpen);
-  const steps = executionLog?.steps;
-  if (!steps?.length) return null;
+  const rag = executionLog?.ragSources ?? [];
+  const rawSteps = executionLog?.steps ?? [];
+  const steps = rawSteps.filter((s) => !isTrainingFetchStep(s));
+
+  if (!rag.length && !steps.length) return null;
 
   return (
     <div className="mt-2 border-t border-dim/80 pt-2">
@@ -49,6 +58,14 @@ export function ExecutionLogViewer({ executionLog, defaultOpen = false }: Props)
       </button>
       {open ? (
         <ol className="mt-2 space-y-2 border-l border-mid pl-3 font-mono text-[11px] text-secondary">
+          {rag.map((s, i) => (
+            <li key={`rag-${s.hash}-${i}`} className="leading-relaxed">
+              <span className="mr-1.5 text-[#a78bfa]" aria-hidden>
+                🧠
+              </span>
+              Fetching training doc: {s.filename} · {s.hash.length > 14 ? `${s.hash.slice(0, 6)}…${s.hash.slice(-4)}` : s.hash}
+            </li>
+          ))}
           {steps.map((s, i) => (
             <li key={`${s.step ?? i}-${i}`} className="leading-relaxed">
               <span className="mr-1.5" aria-hidden>

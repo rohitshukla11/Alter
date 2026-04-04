@@ -27,7 +27,7 @@ export const OnboardingSidebar = memo(function OnboardingSidebar({ step, onStep 
         <Link
           href="/"
           className="flex size-9 items-center justify-center rounded-ui border border-mid font-mono text-[11px] text-accent no-underline"
-          aria-label="Counselr home"
+          aria-label="Alter home"
         >
           CR
         </Link>

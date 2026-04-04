@@ -32,7 +32,12 @@ export function OnboardingFlow({ advisorTemplateId = null }: Props) {
   }, [goStep]);
 
   return (
-    <Shell step={step} onStep={goStep}>
+    <Shell
+      step={step}
+      onStep={goStep}
+      createHeadline='Create your Web3 Architect (AI Digital Twin)'
+      createSubline="Default profession is Web3 Architect (token launches). Switch profession anytime — other experts behave as before."
+    >
       <StepSlider step={step}>
         {[
           <StepWorldId key="w" onVerified={onWorldVerified} />,
