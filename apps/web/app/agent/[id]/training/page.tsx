@@ -25,6 +25,7 @@ type Manifest = {
     sizeBytes: number;
     uploadedAt: number;
     description?: string;
+    metadata?: { source?: string; seeded?: boolean };
   }>;
   manifestHash: string;
   createdAt: number;
@@ -289,6 +290,8 @@ export default function TrainingDataPage() {
             {listDocs.map((row) => {
               const dbDoc = docs.find((d) => d.filename === row.filename);
               const badge = mimeBadge(row.filename);
+              const showSeedBadge =
+                dbDoc?.metadata?.seeded === true || row.metadata?.seeded === true;
               return (
                 <li key={row.filename} className="rounded-ui border border-dim bg-black/30 p-4">
                   <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
@@ -296,6 +299,11 @@ export default function TrainingDataPage() {
                       {badge.label}
                     </span>
                     <span className="text-primary">{row.filename}</span>
+                    {showSeedBadge ? (
+                      <span className="ml-2 rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400 dark:bg-zinc-800">
+                        seed
+                      </span>
+                    ) : null}
                     <span className="text-tertiary">{formatBytes(row.sizeBytes)}</span>
                     <button
                       type="button"

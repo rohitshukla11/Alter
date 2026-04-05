@@ -31,11 +31,16 @@ function apiPath(path: string): string {
   return `${origin}${path}`;
 }
 
+export type DownloadResult = {
+  data: string | object | Blob;
+  sizeBytes: number | null;
+};
+
 /**
  * Client hook: loads metadata via GET `/api/storage/download` and bytes via POST (SDK runs server-side only).
  */
 export function useDownload(): {
-  download: (rootHash: string) => Promise<string | object | Blob>;
+  download: (rootHash: string) => Promise<DownloadResult>;
   status: DownloadStatus;
   fileInfo: { size: number; finalized: boolean } | null;
   error: string | null;
@@ -44,7 +49,7 @@ export function useDownload(): {
   const [fileInfo, setFileInfo] = useState<{ size: number; finalized: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const download = useCallback(async (rootHash: string) => {
+  const download = useCallback(async (rootHash: string): Promise<DownloadResult> => {
     setError(null);
     setFileInfo(null);
 
@@ -76,7 +81,8 @@ export function useDownload(): {
         throw new Error("File not finalized");
       }
 
-      setFileInfo({ size: ok.fileInfo.size, finalized: ok.fileInfo.finalized });
+      const sizeBytes = ok.fileInfo.size;
+      setFileInfo({ size: sizeBytes, finalized: ok.fileInfo.finalized });
 
       setStatus("downloading");
       const postRes = await fetch(apiPath("/api/storage/download"), {
@@ -97,18 +103,18 @@ export function useDownload(): {
       if (ct.includes("application/json")) {
         const data: unknown = await postRes.json();
         setStatus("done");
-        return data as object;
+        return { data: data as object, sizeBytes };
       }
 
       if (ct.startsWith("text/")) {
         const text = await postRes.text();
         setStatus("done");
-        return text;
+        return { data: text, sizeBytes };
       }
 
       const blob = await postRes.blob();
       setStatus("done");
-      return blob;
+      return { data: blob, sizeBytes };
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Unknown error";
       console.error("[useDownload]", e);

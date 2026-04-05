@@ -29,6 +29,8 @@ import { SectionLabel } from "@/components/ui/SectionLabel";
 import { GhostButton } from "@/components/ui/GhostButton";
 import { UnderlineInput } from "@/components/ui/UnderlineInput";
 import { contentFingerprint } from "@/lib/contentFingerprint";
+import { useDownload } from "@/hooks/use0GDownload";
+import { StorageViewerModal } from "@/components/StorageViewerModal";
 
 type UserMsg = { role: "user"; text: string };
 
@@ -90,6 +92,127 @@ function zgStorageSubmissionUrl(storageScanBase: string, root: string | null | u
   const hex = r.startsWith("0x") ? r : `0x${r}`;
   if (!/^0x[0-9a-fA-F]+$/i.test(hex)) return null;
   return `${base}/submission/${hex}`;
+}
+
+const ROOT_HASH_66_RE = /^0x[0-9a-fA-F]{64}$/;
+
+function normalizeRootHash66(root: string | null | undefined): string | null {
+  if (!root?.trim() || root.trim() === "—") return null;
+  const h = root.trim().startsWith("0x") ? root.trim() : `0x${root.trim()}`;
+  return ROOT_HASH_66_RE.test(h) ? h : null;
+}
+
+function DownloadArrowSvg() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M12 3v12m0 0l4-4m-4 4L8 11M5 21h14" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SpinnerCircleSvg() {
+  return (
+    <svg
+      className="animate-spin"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+      <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+type ViewerState = {
+  rootHash: string;
+  content: string | object | null;
+  error: string | null;
+  sizeBytes: number | null;
+};
+
+function StorageScanLinkWithDownload({
+  rawRoot,
+  storageUrl,
+  linkLabel,
+  storageScanBase,
+}: {
+  rawRoot: string | null | undefined;
+  storageUrl: string | null;
+  linkLabel: string;
+  storageScanBase: string;
+}) {
+  const { download, status } = useDownload();
+  const [viewer, setViewer] = useState<ViewerState | null>(null);
+  const validRoot = useMemo(() => normalizeRootHash66(rawRoot), [rawRoot]);
+  const scanBase = storageScanBase.replace(/\/$/, "");
+  const busy = status === "checking" || status === "downloading";
+
+  async function onDownloadClick() {
+    if (!validRoot) return;
+    try {
+      const { data, sizeBytes } = await download(validRoot);
+      if (typeof Blob !== "undefined" && data instanceof Blob) {
+        const url = URL.createObjectURL(data);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${validRoot.slice(0, 8)}.bin`;
+        a.click();
+        URL.revokeObjectURL(url);
+        return;
+      }
+      if (typeof data === "string") {
+        setViewer({ rootHash: validRoot, content: data, error: null, sizeBytes });
+        return;
+      }
+      setViewer({ rootHash: validRoot, content: data, error: null, sizeBytes });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Download failed";
+      setViewer({ rootHash: validRoot, content: null, error: msg, sizeBytes: null });
+    }
+  }
+
+  return (
+    <>
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        {storageUrl ? (
+          <a
+            href={storageUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block font-mono text-[10px] text-[var(--accent)] no-underline hover:underline"
+          >
+            {linkLabel} ↗
+          </a>
+        ) : null}
+        {validRoot ? (
+          <button
+            type="button"
+            onClick={() => onDownloadClick().catch(() => {})}
+            disabled={busy}
+            title="Download from 0G"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border-1)] bg-[var(--bg-1)] text-[var(--text-1)] hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+          >
+            {busy ? <SpinnerCircleSvg /> : <DownloadArrowSvg />}
+          </button>
+        ) : null}
+      </div>
+      {viewer ? (
+        <StorageViewerModal
+          rootHash={viewer.rootHash}
+          content={viewer.content}
+          error={viewer.error}
+          onClose={() => setViewer(null)}
+          sizeBytes={viewer.sizeBytes}
+          storageScanUrl={scanBase || null}
+        />
+      ) : null}
+    </>
+  );
 }
 
 export function AgentConsole({ initialEns = "" }: Props) {
@@ -388,16 +511,12 @@ export function AgentConsole({ initialEns = "" }: Props) {
             <div className="my-3 h-px bg-[var(--border-0)]" />
             <SectionLabel label="ON-CHAIN PROOF" className="mb-2" />
             <HashDisplay hash={agent.configRoot || "—"} label="Config root" />
-            {configStorageUrl ? (
-              <a
-                href={configStorageUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-1 inline-block font-mono text-[10px] text-[var(--accent)] no-underline hover:underline"
-              >
-                Config on StorageScan ↗
-              </a>
-            ) : null}
+            <StorageScanLinkWithDownload
+              rawRoot={agent.configRoot}
+              storageUrl={configStorageUrl}
+              linkLabel="Config on StorageScan"
+              storageScanBase={zgStorageScanBase}
+            />
             <div className="mt-2">
               <HashDisplay
                 hash={liveMemoryHead || "—"}
@@ -405,16 +524,12 @@ export function AgentConsole({ initialEns = "" }: Props) {
                 valueClassName={memoryFlash ? "!text-[var(--accent)]" : ""}
               />
               <p className="mt-0.5 font-mono text-[10px] text-[var(--text-2)]">● live — updates each turn</p>
-              {memoryStorageUrl ? (
-                <a
-                  href={memoryStorageUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 inline-block font-mono text-[10px] text-[var(--accent)] no-underline hover:underline"
-                >
-                  Memory on StorageScan ↗
-                </a>
-              ) : null}
+              <StorageScanLinkWithDownload
+                rawRoot={liveMemoryHead}
+                storageUrl={memoryStorageUrl}
+                linkLabel="Memory on StorageScan"
+                storageScanBase={zgStorageScanBase}
+              />
             </div>
 
             <div className="my-3 h-px bg-[var(--border-0)]" />

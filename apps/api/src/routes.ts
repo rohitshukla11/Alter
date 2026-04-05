@@ -74,6 +74,7 @@ import {
   deleteTrainingDocument,
   getTrainingManifest,
   verifyTrainingDocumentStorage,
+  seedTrainingDocsForAgent,
 } from "./trainingData.js";
 
 declare module "@fastify/jwt" {
@@ -470,7 +471,13 @@ export async function registerRoutes(app: FastifyInstance) {
       turnsSinceReflection: 0,
       ensHumanVerifiedHint: ensWritten,
     };
-    if (config.persistAgentsLocally) insertAgent(agent);
+    if (config.persistAgentsLocally) {
+      insertAgent(agent);
+      console.log(`[seed] Seeding training docs for agent ${agent.id}`);
+      void seedTrainingDocsForAgent(agent.id).catch((err) => {
+        console.error("[seed] Training seed failed:", err);
+      });
+    }
 
     let indexManifestRoot: string | undefined;
     try {

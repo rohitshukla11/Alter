@@ -10,7 +10,8 @@
     "check:0g": "tsx scripts/check-0g.ts",
     "resolve:ens": "tsx scripts/resolve-ens.ts",
     "clear-agents": "tsx scripts/clear-agents.ts",
-    "seed-training": "tsx scripts/seed-training-data.ts"
+    "seed-training": "tsx scripts/seed-training-data.ts",
+    "seed:training": "tsx scripts/seed-training.ts"
   },
   "dependencies": {
     "@0gfoundation/0g-ts-sdk": "^1.2.1",

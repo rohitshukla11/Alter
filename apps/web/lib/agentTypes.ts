@@ -83,6 +83,7 @@ export type TrainingDocument = {
   hash: string;
   uploadedAt: number;
   description?: string;
+  metadata?: { source?: string; seeded?: boolean };
 };
 
 export type ExecutionLogPayload = {

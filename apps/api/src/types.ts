@@ -65,6 +65,12 @@ export type AgentRecord = {
   trainingUpdatedAt?: number;
 };
 
+/** Optional tags for training rows (e.g. demo seed corpus). */
+export type TrainingDocMetadata = {
+  source?: string;
+  seeded?: boolean;
+};
+
 export type TrainingDocumentRecord = {
   id: string;
   agentId: string;
@@ -75,6 +81,7 @@ export type TrainingDocumentRecord = {
   hash: string;
   uploadedAt: number;
   description?: string;
+  metadata?: TrainingDocMetadata;
 };
 
 export type DatabaseShape = {

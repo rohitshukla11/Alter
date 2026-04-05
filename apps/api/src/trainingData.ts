@@ -9,8 +9,10 @@ import {
   getTrainingDocs,
 } from "./db.js";
 import { tryWriteAlterTrainingRecords } from "./ens.js";
-import type { TrainingDocumentRecord } from "./types.js";
+import type { TrainingDocumentRecord, TrainingDocMetadata } from "./types.js";
 import type { RagSource } from "./openclaw/types.js";
+
+const SEED_DOC_META: TrainingDocMetadata = { source: "seed", seeded: true };
 
 export type TrainingDocument = TrainingDocumentRecord;
 export type { RagSource };
@@ -46,7 +48,8 @@ export async function uploadTrainingDocument(
   filename: string,
   mimeType: string,
   buffer: Buffer,
-  description?: string
+  description?: string,
+  metadata?: TrainingDocMetadata
 ): Promise<TrainingDocument> {
   const safeName = uniqueSafeFilename(agentId, filename);
   const hash = await uploadBufferTo0G(buffer);
@@ -60,6 +63,7 @@ export async function uploadTrainingDocument(
     hash,
     uploadedAt: Date.now(),
     description,
+    metadata,
   };
 
   addTrainingDoc(doc);
@@ -90,6 +94,7 @@ export async function rebuildManifest(agentId: string): Promise<string> {
       sizeBytes: d.sizeBytes,
       uploadedAt: d.uploadedAt,
       description: d.description,
+      metadata: d.metadata,
     })),
     createdAt: Date.now(),
   };
@@ -213,4 +218,89 @@ export async function getTrainingRagForInference(
   }
 
   return { context: contexts.join("\n\n---\n\n"), sources };
+}
+
+const SEED_TRAINING_DOCUMENTS: ReadonlyArray<{ filename: string; description: string; body: string }> = [
+  {
+    filename: "0g-network-architecture.txt",
+    description: "0G dual-lane storage, Turbo, compute, DA, Galileo (seed)",
+    body: `0G Network Architecture — Technical Summary
+
+0G Storage uses a dual-lane model that separates commitment from bulk delivery. The data publishing lane anchors Merkle roots and transaction metadata on-chain so clients can prove inclusion and finality without downloading entire blobs. The data storage lane stores erasure-coded segments across a peer-to-peer storage network, enabling high throughput retrieval and repair while keeping on-chain costs bounded to commitments and incentives.
+
+Turbo and Standard modes trade off between faster finality paths versus broader replication defaults; operators choose based on latency targets and cost. Proof of Random Access (PoRA) style mining aligns storage providers with honest segment availability and discourages freeloading. 0G Compute layers an inference marketplace on top: models run behind OpenAI-compatible endpoints with ledger-based settlement, while agents and dApps submit prompts and tool traces through the same stack.
+
+0G Data Availability (DA) complements storage by guaranteeing that published data remains retrievable for rollups and verification games. Together, storage + DA + compute form a single data pipeline from upload to model output.
+
+Galileo testnet (Chain ID 16602) exercises this stack end-to-end. It targets roughly 2500 TPS in lab configurations for settlement-adjacent workloads while using CometBFT-derived consensus for ordering and fork choice. Builders should treat Galileo as the integration surface for uploads, indexer queries, compute broker flows, and wallet-funded operations before mainnet hardening.
+
+For hackathon demos, treat the Merkle root as the canonical file identifier, verify it on the indexer, and prefer StorageScan submission URLs for human-readable inspection of roots and receipts.`,
+  },
+  {
+    filename: "defi-protocol-audit-checklist.txt",
+    description: "Smart contract and DeFi audit checklist (seed)",
+    body: `DeFi Protocol Audit Checklist
+
+Reentrancy: identify external calls before state updates; use checks-effects-interactions; prefer pull over push payments where possible; document any intentional callback surfaces.
+
+Integer safety: rely on Solidity 0.8+ defaults but watch casting, multiplication before division, and fee-on-transfer tokens that break balance assumptions.
+
+Access control: map every privileged function to onlyOwner, roles, or timelocks; ensure initializer paths cannot be replayed; verify two-step ownership transfers on production deployments.
+
+Oracles: document price sources, heartbeat staleness, TWAP vs spot usage, and liquidation paths that could be manipulated with thin liquidity or sandwichable updates.
+
+Flash loans: trace whether any single-transaction paths combine borrow, price move, and repay; isolate atomic arbitrage from governance or collateral factors.
+
+Upgrade proxies: confirm storage layout compatibility, admin keys, pause switches, and migration plans; require timelock + multisig for implementation changes.
+
+Events: ensure critical state transitions emit indexed parameters for off-chain monitors and accounting reconstructions.
+
+Gas griefing: bound unbounded loops in user-facing paths; avoid unbounded dynamic arrays in hot paths; consider caps on batch sizes.
+
+Front-running: examine mempool-visible ordering for liquidations, auctions, and MEV-sensitive queues; document mitigations such as commit-reveal or private mempools.
+
+Emergency controls: verify pause scope, who can trigger it, and whether paused state still allows withdrawals; run tabletop exercises for incident response.
+
+Use this list as a conversation guide with security reviewers rather than a substitute for professional audits.`,
+  },
+  {
+    filename: "ai-agent-system-design.txt",
+    description: "Agent memory, tools, delegation, identity (seed)",
+    body: `AI Agent System Design Overview
+
+Memory splits into a short-term working context—the conversational window the model sees each turn—and durable long-term stores such as vector databases or key-value logs keyed by content hashes. Good systems version memory writes, tie them to user consent, and expose provenance so downstream tools can cite sources.
+
+Tool-use patterns wrap deterministic APIs (RPC calls, storage uploads, ENS resolution) behind structured JSON schemas. Agents should validate tool outputs, handle retries idempotently, and surface partial failures without hallucinating success.
+
+Delegation models encode which agent may act on behalf of which principal, including scoped permissions and expiring mandates. Trust hierarchies matter when sub-agents operate with lower assurances than a primary advisor.
+
+Reputation accumulates from verifiable outcomes: successful task completions, user feedback with signatures, and on-chain attestations where available. Keep reputation inputs transparent to avoid silent gaming.
+
+Agent-to-agent protocols should standardize message envelopes (who, what capability, which chain, which session) and prefer content-addressed payloads for large artifacts.
+
+Identity verification layers like World ID reduce sybil risk for high-stakes flows while preserving privacy via nullifiers rather than raw biometrics on-chain.
+
+Monetization often pairs per-request pricing with compute and storage rebates; ledgers track balances, provider acknowledgements, and refunds on failure.
+
+For Alter-style demos, bind memory roots to 0G, expose StorageScan links for auditability, and keep tool traces small enough to render in the UI without overwhelming newcomers.`,
+  },
+];
+
+/** Upload three baseline training texts for hackathon demos (idempotent enough for fresh agents). */
+export async function seedTrainingDocsForAgent(agentId: string): Promise<void> {
+  const agent = getAgentById(agentId);
+  if (!agent) {
+    console.warn(`[seed] skip training seed — agent not in local DB: ${agentId}`);
+    return;
+  }
+  for (const doc of SEED_TRAINING_DOCUMENTS) {
+    await uploadTrainingDocument(
+      agentId,
+      doc.filename,
+      "text/plain",
+      Buffer.from(doc.body, "utf-8"),
+      doc.description,
+      SEED_DOC_META
+    );
+  }
 }
