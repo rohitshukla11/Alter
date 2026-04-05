@@ -1,6 +1,6 @@
 import { createConfig, http } from "wagmi";
+import { injected } from "@wagmi/core";
 import { defineChain } from "viem";
-import { injected } from "wagmi/connectors";
 
 export const zgGalileoTestnet = defineChain({
   id: 16602,
